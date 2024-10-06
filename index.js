@@ -237,6 +237,28 @@ app.post('/api/questions', (req, res) => {
 });
 
 
+
+// Get all unique weeks from questions
+app.get('/api/questions/weeks', async (req, res) => {
+    try {
+        const weeks = await Question.find().distinct('week');
+        res.status(200).json(weeks);
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching weeks' });
+    }
+});
+
+// Get all questions for a specific week
+app.get('/api/questions/week/:week', async (req, res) => {
+    const { week } = req.params;
+    try {
+        const questions = await Question.find({ week });
+        res.status(200).json(questions);
+    } catch (error) {
+        res.status(500).json({ error: 'Error fetching questions for the week' });
+    }
+});
+
 // Start the server
 app.listen(5000, () => {
     console.log(`Server is running on http://localhost:5000`);
