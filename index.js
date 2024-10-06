@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 // Initialize Express app
 const app = express();
@@ -10,6 +11,29 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+
+mongoose.connect('mongodb+srv://rizwan2001:rizwan2001@cluster0.6ucejfl.mongodb.net/compiler?retryWrites=true&w=majority&appName=Cluster0', { useNewUrlParser: true, useUnifiedTopology: true });
+
+
+
+// Middleware
+
+
+// Question Schema
+const questionSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    inputFormat: { type: String, required: true },
+    outputFormat: { type: String, required: true },
+    testCases: [{ input: String, expectedOutput: String }], // Test cases structured as objects
+    difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
+    week: { type: Number, required: true }
+});
+
+// Question Model
+const Question = mongoose.model('Question', questionSchema);
+
 
 // Function to execute the code
 const executeCode = (code, language, input, callback) => {
@@ -187,6 +211,31 @@ app.post('/api/compiler/run', (req, res) => {
         });
     });
 });
+
+
+// Route to add a new coding question
+app.post('/api/questions', (req, res) => {
+    const { title, description, inputFormat, outputFormat, testCases, difficulty, week } = req.body;
+
+    if (!title || !description || !inputFormat || !outputFormat || !testCases || !difficulty || !week) {
+        return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    const newQuestion = new Question({
+        title,
+        description,
+        inputFormat,
+        outputFormat,
+        testCases: testCases.map(tc => ({ input: tc.input, expectedOutput: tc.expectedOutput })), // Map test cases to objects
+        difficulty,
+        week
+    });
+
+    newQuestion.save()
+        .then(() => res.status(201).json({ message: 'Question added successfully!' }))
+        .catch(err => res.status(500).json({ error: err.message }));
+});
+
 
 // Start the server
 app.listen(5000, () => {
